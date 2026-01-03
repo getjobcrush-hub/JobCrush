@@ -1,0 +1,45 @@
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#map {
+  width: 100%;
+  height: 100vh;
+}
+
+.job-popup {
+  padding: 8px;
+}
+
+.job-popup h3 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.job-popup p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.job-popup a {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.job-popup a:hover {
+  text-decoration: underline;
+}
