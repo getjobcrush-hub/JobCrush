@@ -48,12 +48,15 @@ export default function Home() {
         ? `From $${(job.salary_min/1000).toFixed(0)}k`
         : ''
 
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-        <div class="job-popup">
-          <h3>${job.title}</h3>
-          <p>${job.company}</p>
-          ${salary ? `<p>${salary}</p>` : ''}
-          <a href="${job.url}" target="_blank">View Job →</a>
+      const popup = new mapboxgl.Popup({ offset: 25, maxWidth: '320px' }).setHTML(`
+        <div class="job-card">
+          <div class="job-card-header">
+            <div class="job-card-company">${job.company}</div>
+            <h3 class="job-card-title">${job.title}</h3>
+            <div class="job-card-location">${job.location}</div>
+          </div>
+          ${salary ? `<div class="job-card-salary">${salary}</div>` : ''}
+          <a href="${job.url}" target="_blank" class="job-card-button">View Job →</a>
         </div>
       `)
 
