@@ -78,8 +78,12 @@ export default function Home() {
   }
 
   return (
-    <main>
-      <div ref={mapContainer} id="map" />
-    </main>
-  )
+  <div className="app-container">
+    <header className="header">
+      <h1 className="logo">JobCrush</h1>
+    </header>
+    <div id="map" ref={mapContainer} />
+  </div>
+)
+  
 }
