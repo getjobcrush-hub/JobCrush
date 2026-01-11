@@ -190,11 +190,12 @@ export default function Home() {
     setJobs(data)
   }
 
-  return (
-    <div className="app-container">
-      <header className="header">
-        <h1 className="logo">JobCrush</h1>
-      </header>
+  <header className="header">
+  <div className="logo-group">
+    <h1 className="logo">JobCrush</h1>
+    <span className="tagline">Find jobs near you</span>
+  </div>
+</header>
       <div id="map" ref={mapContainer} />
     </div>
   )
