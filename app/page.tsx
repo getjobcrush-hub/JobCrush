@@ -29,8 +29,8 @@ export default function Home() {
     map.current = new mapboxgl.Map({
       container: mapContainer.current!,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [-78.6382, 35.7796], // Raleigh
-      zoom: 10
+      center: [-78.6382, 35.7796],
+      zoom: 9
     })
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
@@ -39,31 +39,144 @@ export default function Home() {
   useEffect(() => {
     if (!map.current || jobs.length === 0) return
 
-    jobs.forEach((job) => {
-      if (!job.latitude || !job.longitude) return
+    map.current.on('load', () => {
+      const geojson: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection',
+        features: jobs
+          .filter(job => job.latitude && job.longitude)
+          .map(job => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [job.longitude, job.latitude]
+            },
+            properties: {
+              id: job.id,
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              salary_min: job.salary_min,
+              salary_max: job.salary_max,
+              url: job.url
+            }
+          }))
+      }
 
-      const salary = job.salary_min && job.salary_max
-        ? `$${(job.salary_min/1000).toFixed(0)}k - $${(job.salary_max/1000).toFixed(0)}k`
-        : job.salary_min
-        ? `From $${(job.salary_min/1000).toFixed(0)}k`
-        : ''
+      if (map.current!.getSource('jobs')) {
+        (map.current!.getSource('jobs') as mapboxgl.GeoJSONSource).setData(geojson)
+        return
+      }
 
-      const popup = new mapboxgl.Popup({ offset: 25, maxWidth: '320px' }).setHTML(`
-        <div class="job-card">
-          <div class="job-card-header">
-            <div class="job-card-company">${job.company}</div>
-            <h3 class="job-card-title">${job.title}</h3>
-            <div class="job-card-location">${job.location}</div>
-          </div>
-          ${salary ? `<div class="job-card-salary">${salary}</div>` : ''}
-          <a href="${job.url}" target="_blank" class="job-card-button">View Job →</a>
-        </div>
-      `)
+      map.current!.addSource('jobs', {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50
+      })
 
-      new mapboxgl.Marker({ color: '#2563eb' })
-        .setLngLat([job.longitude, job.latitude])
-        .setPopup(popup)
-        .addTo(map.current!)
+      map.current!.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'jobs',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#2563eb',
+            10, '#1d4ed8',
+            30, '#1e40af'
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            20,
+            10, 25,
+            30, 30
+          ]
+        }
+      })
+
+      map.current!.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'jobs',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12
+        },
+        paint: {
+          'text-color': '#ffffff'
+        }
+      })
+
+      map.current!.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'jobs',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#2563eb',
+          'circle-radius': 8,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      })
+
+      map.current!.on('click', 'clusters', (e) => {
+        const features = map.current!.queryRenderedFeatures(e.point, { layers: ['clusters'] })
+        const clusterId = features[0].properties!.cluster_id
+        const source = map.current!.getSource('jobs') as mapboxgl.GeoJSONSource
+        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err) return
+          map.current!.easeTo({
+            center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
+            zoom: zoom!
+          })
+        })
+      })
+
+      map.current!.on('click', 'unclustered-point', (e) => {
+        const props = e.features![0].properties!
+        const coords = (e.features![0].geometry as GeoJSON.Point).coordinates.slice() as [number, number]
+
+        const salary = props.salary_min && props.salary_max
+          ? `$${(props.salary_min/1000).toFixed(0)}k - $${(props.salary_max/1000).toFixed(0)}k`
+          : props.salary_min
+            ? `From $${(props.salary_min/1000).toFixed(0)}k`
+            : ''
+
+        new mapboxgl.Popup({ offset: 25, maxWidth: '320px' })
+          .setLngLat(coords)
+          .setHTML(`
+            <div class="job-card">
+              <div class="job-card-header">
+                <div class="job-card-company">${props.company}</div>
+                <h3 class="job-card-title">${props.title}</h3>
+                <div class="job-card-location">${props.location}</div>
+              </div>
+              ${salary ? `<div class="job-card-salary">${salary}</div>` : ''}
+              <a href="${props.url}" target="_blank" class="job-card-button">View Job →</a>
+            </div>
+          `)
+          .addTo(map.current!)
+      })
+
+      map.current!.on('mouseenter', 'clusters', () => {
+        map.current!.getCanvas().style.cursor = 'pointer'
+      })
+      map.current!.on('mouseleave', 'clusters', () => {
+        map.current!.getCanvas().style.cursor = ''
+      })
+      map.current!.on('mouseenter', 'unclustered-point', () => {
+        map.current!.getCanvas().style.cursor = 'pointer'
+      })
+      map.current!.on('mouseleave', 'unclustered-point', () => {
+        map.current!.getCanvas().style.cursor = ''
+      })
     })
   }, [jobs])
 
@@ -78,12 +191,11 @@ export default function Home() {
   }
 
   return (
-  <div className="app-container">
-    <header className="header">
-      <h1 className="logo">JobCrush</h1>
-    </header>
-    <div id="map" ref={mapContainer} />
-  </div>
-)
-  
+    <div className="app-container">
+      <header className="header">
+        <h1 className="logo">JobCrush</h1>
+      </header>
+      <div id="map" ref={mapContainer} />
+    </div>
+  )
 }
