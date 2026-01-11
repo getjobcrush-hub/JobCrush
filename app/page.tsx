@@ -18,6 +18,10 @@ interface Job {
   description: string
   url: string
   posted_at: string
+  job_type: string | null
+  experience_level: string | null
+  requirements: string[] | null
+  benefits: string[] | null
 }
 
 export default function Home() {
@@ -66,7 +70,11 @@ export default function Home() {
             salary_max: job.salary_max,
             description: job.description,
             url: job.url,
-            posted_at: job.posted_at
+            posted_at: job.posted_at,
+            job_type: job.job_type,
+            experience_level: job.experience_level,
+            requirements: JSON.stringify(job.requirements),
+            benefits: JSON.stringify(job.benefits)
           }
         }))
     }
@@ -161,7 +169,11 @@ export default function Home() {
         salary_max: props.salary_max,
         description: props.description,
         url: props.url,
-        posted_at: props.posted_at
+        posted_at: props.posted_at,
+        job_type: props.job_type,
+        experience_level: props.experience_level,
+        requirements: props.requirements ? JSON.parse(props.requirements) : null,
+        benefits: props.benefits ? JSON.parse(props.benefits) : null
       }
       setSelectedJob(job)
     })
@@ -232,10 +244,39 @@ export default function Home() {
                 <span className="panel-date">{formatDate(selectedJob.posted_at)}</span>
               </div>
 
+              {(selectedJob.job_type || selectedJob.experience_level) && (
+                <div className="panel-tags">
+                  {selectedJob.job_type && <span className="panel-tag">{selectedJob.job_type}</span>}
+                  {selectedJob.experience_level && <span className="panel-tag">{selectedJob.experience_level}</span>}
+                </div>
+              )}
+
               <div className="panel-section">
                 <h3>About this role</h3>
                 <p>{selectedJob.description}</p>
               </div>
+
+              {selectedJob.requirements && selectedJob.requirements.length > 0 && (
+                <div className="panel-section">
+                  <h3>Requirements</h3>
+                  <ul className="panel-list">
+                    {selectedJob.requirements.map((req, i) => (
+                      <li key={i}>{req}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                <div className="panel-section">
+                  <h3>Benefits</h3>
+                  <ul className="panel-list benefits">
+                    {selectedJob.benefits.map((ben, i) => (
+                      <li key={i}>{ben}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="panel-actions">
                 <a href={selectedJob.url} target="_blank" className="btn-apply">Apply Now →</a>
