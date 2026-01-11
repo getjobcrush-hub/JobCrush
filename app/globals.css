@@ -111,6 +111,17 @@ body {
   margin: 0;
   letter-spacing: -0.5px;
 }
+.logo-group {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.tagline {
+  font-size: 14px;
+  color: #888;
+  font-weight: 400;
+}
 
 #map {
   flex: 1;
